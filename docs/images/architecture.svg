@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b4636"/>
+    </marker>
+    <style>
+      .box { rx: 12; stroke-width: 1.5; }
+      .title { font-size: 15px; font-weight: 700; fill: #2b2118; }
+      .sub { font-size: 12px; fill: #5b4636; }
+      .group { font-size: 13px; font-weight: 700; fill: #7a6a5c; letter-spacing: .05em; }
+      .edge { stroke: #5b4636; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .dash { stroke-dasharray: 6 4; }
+      .label { font-size: 11px; fill: #5b4636; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="560" fill="#faf7f2"/>
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#6b3e1f">Specialty Coffee Roastery &amp; Cafe Network – Architecture</text>
+
+  <!-- groups -->
+  <rect x="20" y="60" width="220" height="470" rx="16" fill="#fff" stroke="#e8dfd3"/>
+  <text x="130" y="84" text-anchor="middle" class="group">CLIENT</text>
+  <rect x="270" y="60" width="330" height="470" rx="16" fill="#fff8ef" stroke="#f0d9bd"/>
+  <text x="435" y="84" text-anchor="middle" class="group">AI LAYER · MEMBER 3</text>
+  <rect x="630" y="60" width="350" height="470" rx="16" fill="#f3f6fb" stroke="#d6e0ef"/>
+  <text x="805" y="84" text-anchor="middle" class="group">BACKEND · MEMBERS 1 &amp; 2</text>
+
+  <!-- users -->
+  <rect x="45" y="105" width="170" height="60" class="box" fill="#efe7dd" stroke="#c9b8a4"/>
+  <text x="130" y="131" text-anchor="middle" class="title">👤 Customer</text>
+  <text x="130" y="150" text-anchor="middle" class="sub">browser / phone GPS</text>
+  <rect x="45" y="185" width="170" height="60" class="box" fill="#efe7dd" stroke="#c9b8a4"/>
+  <text x="130" y="211" text-anchor="middle" class="title">🧑‍🍳 Barista / Manager</text>
+  <text x="130" y="230" text-anchor="middle" class="sub">approves AI proposals</text>
+
+  <!-- client app -->
+  <rect x="45" y="300" width="170" height="110" class="box" fill="#6b3e1f" stroke="#6b3e1f"/>
+  <text x="130" y="330" text-anchor="middle" class="title" fill="#fff" style="fill:#fff">client-app</text>
+  <text x="130" y="350" text-anchor="middle" class="sub" style="fill:#f3e7da">nginx · :8080</text>
+  <text x="130" y="372" text-anchor="middle" class="sub" style="fill:#f3e7da">Customer view (map,</text>
+  <text x="130" y="388" text-anchor="middle" class="sub" style="fill:#f3e7da">badges, orders)</text>
+  <text x="130" y="404" text-anchor="middle" class="sub" style="fill:#f3e7da">Manager view (approve)</text>
+
+  <!-- agent worker -->
+  <rect x="295" y="105" width="280" height="110" class="box" fill="#fff" stroke="#e07a1f"/>
+  <text x="435" y="133" text-anchor="middle" class="title">agent-worker · :8091</text>
+  <text x="435" y="155" text-anchor="middle" class="sub">@Scheduled(cron = "0 0 7 * * *")</text>
+  <text x="435" y="173" text-anchor="middle" class="sub">POST /api/v1/agent/trigger-now</text>
+  <text x="435" y="191" text-anchor="middle" class="sub">Spring AI MCP client · LLM or rule-based</text>
+
+  <!-- llm -->
+  <rect x="295" y="245" width="120" height="60" class="box" fill="#f6f1ea" stroke="#c9b8a4"/>
+  <text x="355" y="271" text-anchor="middle" class="title">LLM</text>
+  <text x="355" y="290" text-anchor="middle" class="sub">Groq (optional)</text>
+
+  <!-- mcp server -->
+  <rect x="295" y="335" width="280" height="175" class="box" fill="#fff" stroke="#e07a1f"/>
+  <text x="435" y="362" text-anchor="middle" class="title">mcp-server · :8090</text>
+  <text x="435" y="381" text-anchor="middle" class="sub">Streamable HTTP · /mcp (not stdio)</text>
+  <rect x="312" y="394" width="246" height="22" rx="6" fill="#e3ecfb"/>
+  <text x="435" y="410" text-anchor="middle" class="label">R · get_at_risk_batches</text>
+  <rect x="312" y="420" width="246" height="22" rx="6" fill="#e3ecfb"/>
+  <text x="435" y="436" text-anchor="middle" class="label">R · get_drink_sales_velocity</text>
+  <rect x="312" y="446" width="246" height="22" rx="6" fill="#ffe1c2"/>
+  <text x="435" y="462" text-anchor="middle" class="label">W · propose_flash_menu_promo</text>
+  <rect x="312" y="472" width="246" height="22" rx="6" fill="#ffe1c2"/>
+  <text x="435" y="488" text-anchor="middle" class="label">W · propose_inter_cafe_transfer</text>
+
+  <!-- server A -->
+  <rect x="655" y="105" width="300" height="95" class="box" fill="#fff" stroke="#2f6db5"/>
+  <text x="805" y="133" text-anchor="middle" class="title">Server A · command-service</text>
+  <text x="805" y="153" text-anchor="middle" class="sub">:8081 · menu, orders, proposals</text>
+  <text x="805" y="171" text-anchor="middle" class="sub">PENDING → APPROVED / REJECTED</text>
+
+  <!-- postgres -->
+  <rect x="655" y="225" width="135" height="60" class="box" fill="#f3f6fb" stroke="#9fb4d6"/>
+  <text x="722" y="251" text-anchor="middle" class="title">PostgreSQL</text>
+  <text x="722" y="270" text-anchor="middle" class="sub">write DB</text>
+  <!-- kafka -->
+  <rect x="820" y="225" width="135" height="60" class="box" fill="#f3f6fb" stroke="#9fb4d6"/>
+  <text x="887" y="251" text-anchor="middle" class="title">Redpanda</text>
+  <text x="887" y="270" text-anchor="middle" class="sub">Kafka events</text>
+
+  <!-- server B -->
+  <rect x="655" y="335" width="300" height="95" class="box" fill="#fff" stroke="#2f6db5"/>
+  <text x="805" y="363" text-anchor="middle" class="title">Server B · query-service</text>
+  <text x="805" y="383" text-anchor="middle" class="sub">:8082 · read models</text>
+  <text x="805" y="401" text-anchor="middle" class="sub">cafes · batches · daily sales</text>
+
+  <!-- edges -->
+  <path class="edge" d="M45,135 C22,135 22,330 45,330"/>
+  <path class="edge" d="M130,245 V300"/>
+  <path class="edge" d="M215,330 C250,330 255,160 295,160"/>
+  <text x="222" y="250" class="label">/api/v1/agent</text>
+  <path class="edge" d="M215,345 C255,345 255,320 300,320 L590,320 C625,320 620,195 655,195"/>
+  <text x="455" y="315" class="label">menu · orders · proposals</text>
+  <path class="edge" d="M215,395 C235,520 260,520 300,520 L610,520 C640,520 640,415 655,415"/>
+  <text x="400" y="515" class="label">/api/v1/query/*</text>
+
+  <path class="edge" d="M435,215 V335"/>
+  <text x="442" y="300" class="label">MCP tools/call</text>
+  <path class="edge" d="M330,215 V245"/>
+  <path class="edge" d="M575,365 C610,365 620,385 655,385"/>
+  <text x="590" y="352" class="label">READ</text>
+  <path class="edge" d="M575,457 C640,457 610,190 655,185"/>
+  <text x="603" y="300" class="label">WRITE</text>
+  <path class="edge dash" d="M575,130 H655"/>
+  <text x="585" y="122" class="label">GET menu</text>
+
+  <path class="edge" d="M722,200 V225"/>
+  <path class="edge" d="M887,200 V225"/>
+  <path class="edge" d="M887,285 V335"/>
+  <text x="893" y="315" class="label">projections</text>
+</svg>
