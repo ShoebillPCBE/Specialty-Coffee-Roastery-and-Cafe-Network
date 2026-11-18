@@ -1,0 +1,23 @@
+services:
+  postgres-write:
+    image: postgres:16-alpine
+    container_name: cafe-postgres-write
+    environment:
+      POSTGRES_DB: cafe_command_db
+      POSTGRES_USER: cafe_admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.4
+    container_name: cafe-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
