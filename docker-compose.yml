@@ -21,3 +21,47 @@ services:
       - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
     ports:
       - "19092:19092"
+
+  # ------------------------------------------------------------------ Member 3: AI layer + client
+  # SERVER_A_URL / SERVER_B_URL point to Member 1's command-service and Member 2's query-service.
+  # When those run in this compose file as "command-service" / "query-service" the defaults work;
+  # otherwise override them in .env (e.g. http://host.docker.internal:8081).
+
+  mcp-server:
+    build: ./mcp-server
+    container_name: cafe-mcp-server
+    environment:
+      SERVER_A_URL: ${SERVER_A_URL:-http://command-service:8081}
+      SERVER_B_URL: ${SERVER_B_URL:-http://query-service:8082}
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8090' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  agent-worker:
+    build: ./agent-worker
+    container_name: cafe-agent-worker
+    environment:
+      MCP_SERVER_URL: http://mcp-server:8090
+      SERVER_A_URL: ${SERVER_A_URL:-http://command-service:8081}
+      # Secret: set it in a local .env file (never commit it). Empty -> rule-based fallback planner.
+      AI_API_KEY: ${AI_API_KEY:-not-set}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.groq.com/openai}
+      AI_MODEL: ${AI_MODEL:-llama-3.3-70b-versatile}
+      TZ: Europe/Bucharest
+    ports:
+      - "8091:8091"
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+
+  client-app:
+    build: ./client-app
+    container_name: cafe-client-app
+    ports:
+      - "8080:80"
+    depends_on:
+      - agent-worker

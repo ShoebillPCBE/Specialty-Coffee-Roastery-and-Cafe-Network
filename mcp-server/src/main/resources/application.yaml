@@ -1,0 +1,46 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: mcp-server
+  ai:
+    mcp:
+      server:
+        name: cafe-network-mcp
+        version: 1.0.0
+        type: SYNC
+        # Remote transport over the Docker network (not stdio).
+        # STREAMABLE -> single endpoint POST/GET http://mcp-server:8090/mcp
+        # Switch to SSE to expose GET /sse + POST /mcp/message instead.
+        protocol: STREAMABLE
+        streamable-http:
+          mcp-endpoint: /mcp
+        instructions: >
+          Tools for the Specialty Coffee Roastery & Cafe Network. Use the read tools
+          (get_at_risk_batches, get_drink_sales_velocity) to inspect a cafe, then the write
+          tools (propose_flash_menu_promo, propose_inter_cafe_transfer) to create PENDING
+          proposals that a barista/manager must approve.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+cafe:
+  # Server A = command-service (write side, Member 1)
+  server-a:
+    base-url: ${SERVER_A_URL:http://localhost:8081}
+    flash-promo-path: /api/v1/proposals/flash-promo
+    transfer-path: /api/v1/proposals/inter-cafe-transfer
+  # Server B = query-service (read side / projections, Member 2)
+  server-b:
+    base-url: ${SERVER_B_URL:http://localhost:8082}
+    batches-path: /api/v1/query/cafes/{cafeId}/batches
+    sales-path: /api/v1/query/cafes/{cafeId}/sales?days={days}
+  freshness:
+    coffee-stale-after-days: 21
+    matcha-oxidized-after-days: 25
+    milk-expiry-window-hours: 48
+    slow-moving-cups-per-day: 8

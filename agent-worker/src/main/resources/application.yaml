@@ -1,0 +1,61 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: agent-worker
+  ai:
+    openai:
+      # Groq (OpenAI-compatible). Without a real key the agent falls back to its rule-based planner.
+      api-key: ${AI_API_KEY:not-set}
+      base-url: ${AI_BASE_URL:https://api.groq.com/openai}
+      chat:
+        options:
+          model: ${AI_MODEL:llama-3.3-70b-versatile}
+          temperature: 0.2
+    mcp:
+      client:
+        enabled: true
+        name: cafe-agent-worker
+        version: 1.0.0
+        type: SYNC
+        request-timeout: 60s
+        # Connect lazily so the worker starts even if mcp-server is still booting.
+        initialized: false
+        # We build our own tool callbacks (to record every tool call the LLM makes).
+        toolcallback:
+          enabled: false
+        streamable-http:
+          connections:
+            cafe-mcp:
+              url: ${MCP_SERVER_URL:http://localhost:8090}
+              endpoint: /mcp
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+agent:
+  zone: Europe/Bucharest
+  llm-enabled: ${AGENT_LLM_ENABLED:true}
+  at-risk-window-hours: 48
+  sales-days: 7
+  max-proposals-per-run: 6
+  max-transfer-distance-km: 3.0
+  # Used to give the LLM valid menu_item_ids for flash promos (Server A, GET /api/v1/menu)
+  menu-url: ${SERVER_A_URL:http://localhost:8081}/api/v1/menu
+  cafes:
+    - id: CAFE-01
+      name: Roastery Victoriei
+      lat: 45.7537
+      lng: 21.2257
+    - id: CAFE-02
+      name: Campus Cafe
+      lat: 45.7472
+      lng: 21.2390
+    - id: CAFE-03
+      name: Iulius Cafe
+      lat: 45.7660
+      lng: 21.2280

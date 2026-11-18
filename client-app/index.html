@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Specialty Coffee Network</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">☕</span>
+      <span>Specialty Coffee Network</span>
+    </div>
+    <nav class="view-switch" role="tablist">
+      <a href="#customer" role="tab" data-view="customer">Customer</a>
+      <a href="#manager" role="tab" data-view="manager">Barista / Manager</a>
+    </nav>
+  </header>
+
+  <div id="demo-banner" class="banner" hidden></div>
+
+  <!-- ============================== CUSTOMER VIEW ============================== -->
+  <main id="view-customer" class="view" hidden>
+    <section class="toolbar">
+      <div class="chips" id="drink-filters" role="group" aria-label="Filter by drink type"></div>
+      <span id="location-status" class="muted"></span>
+    </section>
+
+    <section class="customer-layout">
+      <div id="map" class="map" aria-label="Map of nearby cafes"></div>
+
+      <div class="panel">
+        <h2>Closest cafes</h2>
+        <ul id="cafe-list" class="cafe-list"></ul>
+      </div>
+
+      <div class="panel" id="menu-panel">
+        <h2 id="menu-title">Menu</h2>
+        <p class="muted" id="menu-hint">Pick a cafe to see its menu.</p>
+        <ul id="menu-list" class="menu-list"></ul>
+        <div id="cart" class="cart" hidden>
+          <h3>Your order</h3>
+          <ul id="cart-items"></ul>
+          <div class="cart-total"><span>Total</span><strong id="cart-total">0.00 RON</strong></div>
+          <button id="place-order" class="btn primary">Place order</button>
+          <p id="order-result" class="order-result" role="status"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================== MANAGER VIEW ============================== -->
+  <main id="view-manager" class="view" hidden>
+    <section class="toolbar">
+      <label>Cafe
+        <select id="manager-cafe"><option value="">All cafes</option></select>
+      </label>
+      <div class="chips" id="status-filter" role="group" aria-label="Proposal status">
+        <button class="chip active" data-status="PENDING">Pending</button>
+        <button class="chip" data-status="">All</button>
+      </div>
+      <span class="spacer"></span>
+      <button id="refresh-proposals" class="btn">Refresh</button>
+      <button id="trigger-agent" class="btn primary">Run AI agent now</button>
+    </section>
+
+    <section id="agent-run" class="panel agent-run" hidden></section>
+
+    <section>
+      <h2>AI agent proposals</h2>
+      <p class="muted">Every proposal was created by the AI agent through the MCP server and stays
+        <strong>PENDING</strong> until a barista or manager approves or rejects it.</p>
+      <div id="proposal-list" class="proposal-list"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="demo-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
