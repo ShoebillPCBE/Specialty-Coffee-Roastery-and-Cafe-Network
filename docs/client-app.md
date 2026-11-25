@@ -9,12 +9,12 @@ flowchart TD
     open([Open http://localhost:8080]) --> gps{"Allow location?"}
     gps -- yes --> pos["Use GPS coordinates"]
     gps -- no --> def["Fallback: Timișoara centre"]
-    pos & def --> load["GET /api/v1/query/cafes<br/>+ /cafes/{id}/batches"]
+    pos & def --> load["GET /api/v1/cafes<br/>+ /api/v1/batches?cafeId=..."]
     load --> sort["Sort cafes by distance (haversine)<br/>show map markers + list"]
     sort --> filter{"Drink filter<br/>Coffee / Decaf / Matcha / Tea / Hot Chocolate"}
     filter --> pick["Select cafe → menu (GET /api/v1/menu)<br/>happy-hour prices shown"]
     pick --> cart["Add items to cart"]
-    cart --> order["POST /api/v1/orders"]
+    cart --> order["POST /api/v1/orders?cafeId&menuItemId&quantity<br/>(one call per cart line)"]
     order --> done(["Order confirmation"])
 ```
 

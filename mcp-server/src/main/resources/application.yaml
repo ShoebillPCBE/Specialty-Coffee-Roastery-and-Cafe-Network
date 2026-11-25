@@ -37,8 +37,12 @@ cafe:
   # Server B = query-service (read side / projections, Member 2)
   server-b:
     base-url: ${SERVER_B_URL:http://localhost:8082}
-    batches-path: /api/v1/query/cafes/{cafeId}/batches
-    sales-path: /api/v1/query/cafes/{cafeId}/sales?days={days}
+    # Same /api/v1/batches resource Member 2 already exposes (GET /api/v1/batches/{batchId}),
+    # filtered by cafe. Accepts both the BatchRegisteredEvent and the IngredientBatch JSON shapes.
+    batches-path: /api/v1/batches?cafeId={cafeId}
+    # Daily cups per beverage group, built by Server B from command-service OrderPlacedEvent
+    # (rows of {date|timestamp, beverageGroup, cups|cupsSold}).
+    sales-path: /api/v1/sales?cafeId={cafeId}&days={days}
   freshness:
     coffee-stale-after-days: 21
     matcha-oxidized-after-days: 25

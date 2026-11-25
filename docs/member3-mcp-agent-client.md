@@ -1,7 +1,7 @@
 # Member 3 – Remote MCP Server, Autonomous Agent & Client App
 
 ```
- Client SPA (nginx :8080) ──► /api/v1/query/*  ──► Server B  query-service   (Member 2, :8082)
+ Client SPA (nginx :8080) ──► /api/v1/{cafes,batches,sales} ──► Server B  query-service   (Member 2, :8082)
         │                 └─► /api/v1/*        ──► Server A  command-service (Member 1, :8081)
         └──► /api/v1/agent/* ──► agent-worker (:8091) ──MCP / Streamable HTTP──► mcp-server (:8090)
                                     │  @Scheduled 07:00                           │ 4 @Tool methods
@@ -19,8 +19,8 @@
 
 | Tool | Kind | Calls |
 |---|---|---|
-| `get_at_risk_batches(cafe_id, hours_to_expiry_or_stale)` | read | `GET {B}/api/v1/query/cafes/{cafeId}/batches` → applies the rules: coffee > 21 days since roast, matcha tin open > 25 days, milk/perishables expiring within the window (default 48 h). Batches that cross a limit inside the window are flagged too (`AGING_COFFEE`, `MATCHA_NEAR_OXIDATION`). |
-| `get_drink_sales_velocity(cafe_id, days)` | read | `GET {B}/api/v1/query/cafes/{cafeId}/sales?days=N` → cups per family (ESPRESSO, DECAF, MATCHA, TEA, HOT_CHOCOLATE), avg/day, trend, status `SLOW_MOVING` / `STEADY` / `ACCELERATING`. |
+| `get_at_risk_batches(cafe_id, hours_to_expiry_or_stale)` | read | `GET {B}/api/v1/batches?cafeId={cafeId}` → applies the rules: coffee > 21 days since roast, matcha tin open > 25 days, milk/perishables expiring within the window (default 48 h). Batches that cross a limit inside the window are flagged too (`AGING_COFFEE`, `MATCHA_NEAR_OXIDATION`). |
+| `get_drink_sales_velocity(cafe_id, days)` | read | `GET {B}/api/v1/sales?cafeId={cafeId}&days=N` → cups per family (ESPRESSO, DECAF, MATCHA, TEA, HOT_CHOCOLATE), avg/day, trend, status `SLOW_MOVING` / `STEADY` / `ACCELERATING`. |
 | `propose_flash_menu_promo(cafe_id, menu_item_ids, discount_pct, duration_hours, reason)` | write | `POST {A}/api/v1/proposals/flash-promo` |
 | `propose_inter_cafe_transfer(from_cafe_id, to_cafe_id, batch_id, quantity_grams, reason)` | write | `POST {A}/api/v1/proposals/inter-cafe-transfer` |
 
@@ -45,35 +45,46 @@ Cycle:
 * **Barista / Manager** (`#manager`): shows the agent's proposals with the LLM reasoning, has Approve / Reject buttons and a "Run AI agent now" button.
 * If the backend can't be reached, the UI switches to clearly labelled offline demo data.
 
-## 4. REST contract expected from Members 1 & 2
+## 4. REST contract with Members 1 & 2
 
-These endpoints are **assumed** by this branch. Adjust the paths in config if your services differ.
+Status as of the latest sync with the teammates' branches:
 
-**Server B – query-service**
+| Endpoint | Owner | Status |
+|---|---|---|
+| `GET /api/v1/menu` | Member 1 | ✅ exists |
+| `POST /api/v1/orders?cafeId=&menuItemId=&quantity=` → `"Order placed successfully. ID: ORD-…"` | Member 1 | ✅ exists (client sends one call per cart line) |
+| `GET /api/v1/batches/{batchId}` | Member 2 | ✅ exists (on branch `member2-geo-discovery-and-velocity-read-service`) |
+| `GET /api/v1/batches?cafeId=` | Member 2 | ⏳ needed (same resource, list by cafe) |
+| `GET /api/v1/sales?cafeId=&days=` | Member 2 | ⏳ needed (projection of `OrderPlacedEvent`) |
+| `GET /api/v1/cafes` | Member 2 | ⏳ needed (geo discovery) |
+| `POST /api/v1/proposals/flash-promo`, `/inter-cafe-transfer` | Member 1 | ⏳ needed |
+| `GET /api/v1/proposals?status=&cafeId=`, `POST /api/v1/proposals/{id}/approve` and `/reject` | Member 1 | ⏳ needed |
+
+**Data formats accepted.** Both teammates' shapes are parsed, so nobody has to rename fields:
 
 ```
-GET /api/v1/query/cafes
-  → [{ "cafeId":"CAFE-01", "name":"…", "address":"…", "lat":45.75, "lng":21.22 }]
-GET /api/v1/query/cafes/{cafeId}/batches
-  → [{ "batchId":"B-MAT-04", "cafeId":"CAFE-01", "name":"Matcha Tin #4", "category":"MATCHA_TIN",
-       "remainingQuantity":80, "unit":"g", "roastOrOpenDate":"2026-10-23", "expiryDate":null }]
-GET /api/v1/query/cafes/{cafeId}/sales?days=7
-  → [{ "date":"2026-11-17", "beverageGroup":"MATCHA", "cups":12 }, …]   (one row per day per drink)
+Batch (Member 2, BatchRegisteredEvent):  { batchId, cafeId, ingredientCategory, ingredientName, quantity, unit,
+                                           roastDate, openedAt, expiryDate }            dates as ISO strings
+Batch (Member 1, IngredientBatch /       { batchId, cafeId, category, name, remainingQuantity,
+       BatchStockUpdatedEvent):            roastOrOpenDate, expiryDate }
+Sales row:                               { date, beverageGroup, cups }  or raw OrderPlacedEvent
+                                         { timestamp, beverageGroup, cupsSold }  (summed per day)
+Cafe:                                    { cafeId, name, address, lat, lng }
 ```
 
-**Server A – command-service**
+Coffee age is counted from `roastDate`; matcha and milk from `openedAt`.
+
+**Proposal payloads (Server A):**
 
 ```
-GET  /api/v1/menu                                   (exists)
-POST /api/v1/orders                  { cafeId, items:[{ menuItemId, quantity }] } → { orderId, status }
-POST /api/v1/proposals/flash-promo   { cafeId, menuItemIds[], discountPct, durationHours, reason, proposedBy }
-POST /api/v1/proposals/inter-cafe-transfer { fromCafeId, toCafeId, batchId, quantityGrams, reason, proposedBy }
-     → both return the stored proposal, e.g. { proposalId, status:"PENDING", … }
+POST /api/v1/proposals/flash-promo          { cafeId, menuItemIds[], discountPct, durationHours, reason, proposedBy }
+POST /api/v1/proposals/inter-cafe-transfer  { fromCafeId, toCafeId, batchId, quantityGrams, reason, proposedBy }
+     → { proposalId, status:"PENDING", ... }
 GET  /api/v1/proposals?status=PENDING&cafeId=CAFE-01
-     → [{ proposalId, type:"FLASH_PROMO"|"INTER_CAFE_TRANSFER", status, cafeId | fromCafeId,toCafeId,batchId,quantityGrams,
-          menuItemIds, discountPct, durationHours, reason, proposedBy, createdAt }]
-POST /api/v1/proposals/{id}/approve | /reject    { decidedBy }
+POST /api/v1/proposals/{id}/approve | /reject   { decidedBy }
 ```
+
+All paths are configurable in `mcp-server/src/main/resources/application.yaml` (`cafe.server-a.*`, `cafe.server-b.*`).
 
 ## 5. Run
 

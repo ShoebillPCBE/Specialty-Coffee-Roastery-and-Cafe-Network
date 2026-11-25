@@ -95,7 +95,7 @@
   <path class="edge" d="M215,345 C255,345 255,320 300,320 L590,320 C625,320 620,195 655,195"/>
   <text x="455" y="315" class="label">menu · orders · proposals</text>
   <path class="edge" d="M215,395 C235,520 260,520 300,520 L610,520 C640,520 640,415 655,415"/>
-  <text x="400" y="515" class="label">/api/v1/query/*</text>
+  <text x="400" y="515" class="label">/api/v1/cafes · batches · sales</text>
 
   <path class="edge" d="M435,215 V335"/>
   <text x="442" y="300" class="label">MCP tools/call</text>

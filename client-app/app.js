@@ -6,8 +6,8 @@
 
   // All calls are same-origin; nginx proxies them to the right container (see nginx.conf).
   const API = {
-    cafes: "/api/v1/query/cafes",
-    batches: (cafeId) => `/api/v1/query/cafes/${encodeURIComponent(cafeId)}/batches`,
+    cafes: "/api/v1/cafes",
+    batches: (cafeId) => `/api/v1/batches?cafeId=${encodeURIComponent(cafeId)}`,
     menu: "/api/v1/menu",
     orders: "/api/v1/orders",
     proposals: "/api/v1/proposals",
@@ -111,6 +111,21 @@
     return "ESPRESSO";
   }
 
+  // Server B (Member 2) sends BatchRegisteredEvent fields; command-service uses IngredientBatch fields.
+  function normalizeBatch(b) {
+    const category = (b.category || b.ingredientCategory || "").toUpperCase();
+    const fromOpening = !category.endsWith("_BEAN");
+    const date = b.roastOrOpenDate || (fromOpening ? b.openedAt || b.roastDate : b.roastDate || b.openedAt);
+    return {
+      ...b,
+      category,
+      name: b.name || b.ingredientName,
+      remainingQuantity: b.remainingQuantity ?? b.quantity,
+      roastOrOpenDate: date ? String(date).slice(0, 10) : null,
+      expiryDate: b.expiryDate ? String(b.expiryDate).slice(0, 10) : null,
+    };
+  }
+
   // ------------------------------------------------------------------ freshness badges
 
   // Coffee peaks ~4-14 days after roast; >21 days is past peak. Matcha oxidises after ~25 days open.
@@ -188,7 +203,7 @@
     try {
       cafes = await api(API.cafes);
       cafes = await Promise.all(
-        cafes.map(async (c) => ({ ...c, batches: await api(API.batches(c.cafeId)).catch(() => []) }))
+        cafes.map(async (c) => ({ ...c, batches: ((await api(API.batches(c.cafeId)).catch(() => [])) || []).map(normalizeBatch) }))
       );
       state.demo.customer = false;
     } catch (e) {
@@ -360,23 +375,27 @@
   async function placeOrder() {
     const button = $("#place-order");
     const result = $("#order-result");
-    const body = {
-      cafeId: state.selectedCafeId,
-      items: [...state.cart.entries()].map(([menuItemId, quantity]) => ({ menuItemId, quantity })),
-    };
     button.disabled = true;
     try {
-      let order;
+      const orderIds = [];
       if (state.demo.customer) {
-        order = { orderId: `DEMO-${Date.now().toString().slice(-5)}`, status: "ACCEPTED" };
+        orderIds.push(`DEMO-${Date.now().toString().slice(-5)}`);
       } else {
-        order = await api(API.orders, { method: "POST", body: JSON.stringify(body) });
+        // command-service (Member 1): one order per menu item, query params, plain-text response
+        // "Order placed successfully. ID: ORD-xxxxxxxx"
+        for (const [menuItemId, quantity] of state.cart.entries()) {
+          const params = new URLSearchParams({ cafeId: state.selectedCafeId, menuItemId, quantity: String(quantity) });
+          const res = await fetch(`${API.orders}?${params}`, { method: "POST" });
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          const text = await res.text();
+          orderIds.push((text.match(/ID:\s*(\S+)/) || [])[1] || "received");
+        }
       }
       state.cart.clear();
       renderCart();
       $("#cart").hidden = false;
       result.className = "order-result ok";
-      result.textContent = `Order ${order?.orderId || ""} placed – ${order?.status || "received"}. We'll call your name at the bar!`;
+      result.textContent = `Order ${orderIds.join(", ")} placed. We'll call your name at the bar!`;
     } catch (e) {
       result.className = "order-result error";
       result.textContent = `Could not place the order (${e.message}). Please try again.`;

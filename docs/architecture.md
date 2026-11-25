@@ -28,7 +28,7 @@ flowchart LR
 
     C --> UI
     M --> UI
-    UI -- "/api/v1/query/*" --> B
+    UI -- "/api/v1/cafes, /batches, /sales" --> B
     UI -- "/api/v1/* (menu, orders, proposals)" --> A
     UI -- "/api/v1/agent/*" --> AW
 

@@ -16,11 +16,11 @@ sequenceDiagram
     Note over AW: lock - only one run at a time (409 if busy)
     loop for every cafe
         AW->>MCP: tools/call get_at_risk_batches(cafe_id, 48)
-        MCP->>B: GET /api/v1/query/cafes/{id}/batches
+        MCP->>B: GET /api/v1/batches?cafeId={id}
         B-->>MCP: batches
         MCP-->>AW: at-risk report (rules applied)
         AW->>MCP: tools/call get_drink_sales_velocity(cafe_id, 7)
-        MCP->>B: GET /api/v1/query/cafes/{id}/sales?days=7
+        MCP->>B: GET /api/v1/sales?cafeId={id}&days=7
         B-->>MCP: daily cups
         MCP-->>AW: velocity per drink family
     end
